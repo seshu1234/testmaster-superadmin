@@ -9,40 +9,40 @@ import {
 
 interface StatsCardsProps {
   data?: {
+    mrr: number;
+    arr: number;
+    churn_rate: number;
     total_tenants: number;
     active_tenants: number;
-    total_users: number;
-    monthly_revenue: number;
-    system_uptime: number;
-    queue_size: number;
+    at_risk_tenants: number;
   };
 }
 
 export function StatsCards({ data }: StatsCardsProps) {
   const stats = [
     {
-      name: "Total Tenants",
-      value: data?.total_tenants || 0,
-      subValue: `${data?.active_tenants || 0} active`,
-      icon: BuildingOfficeIcon,
-    },
-    {
-      name: "Total Users",
-      value: data?.total_users || 0,
-      subValue: "across all tenants",
-      icon: UsersIcon,
-    },
-    {
-      name: "Monthly Revenue",
-      value: data?.monthly_revenue ? `$${data.monthly_revenue.toLocaleString()}` : "$0",
-      subValue: "from subscriptions",
+      name: "Monthly Revenue (MRR)",
+      value: data?.mrr ? `₹${data.mrr.toLocaleString()}` : "₹0",
+      subValue: `Yearly: ₹${(data?.arr || 0).toLocaleString()}`,
       icon: CurrencyDollarIcon,
     },
     {
-      name: "System Health",
-      value: data?.system_uptime ? `${data.system_uptime}%` : "99.9%",
-      subValue: `Queue: ${data?.queue_size || 0} jobs`,
+      name: "Total Tenants",
+      value: data?.total_tenants || 0,
+      subValue: `${data?.active_tenants || 0} active centre(s)`,
+      icon: BuildingOfficeIcon,
+    },
+    {
+      name: "Churn Rate",
+      value: data?.churn_rate ? `${data.churn_rate}%` : "0%",
+      subValue: "monthly average",
       icon: ChartBarIcon,
+    },
+    {
+      name: "At Risk Tenants",
+      value: data?.at_risk_tenants || 0,
+      subValue: "expiring in <3 days",
+      icon: UsersIcon,
     },
   ];
 

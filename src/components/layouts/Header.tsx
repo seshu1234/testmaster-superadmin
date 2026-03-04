@@ -1,73 +1,83 @@
 "use client";
 
-import { Fragment } from "react";
-import { Menu, Transition } from "@headlessui/react";
-import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { 
+  Bell, 
+  CircleUser, 
+  Search, 
+  Settings, 
+  User as UserIcon 
+} from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="bg-white shadow-sm">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 justify-between">
-          <div className="flex flex-1">
-            {/* Search bar can go here */}
+    <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md shadow-sm">
+      <div className="flex h-16 items-center justify-between px-6">
+        <div className="flex flex-1 items-center gap-4">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="pl-8 h-9 w-full bg-muted/50 border-transparent focus:bg-background transition-colors"
+            />
           </div>
-          <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <button className="rounded-full p-1 text-gray-400 hover:text-gray-500">
-              <BellIcon className="h-6 w-6" />
-            </button>
+        </div>
 
-            {/* Profile dropdown */}
-            <Menu as="div" className="relative">
-              <Menu.Button className="flex items-center space-x-2 rounded-full text-sm focus:outline-none">
-                <UserCircleIcon className="h-8 w-8 text-gray-400" />
-                <span className="text-gray-700">{user?.name || "Admin"}</span>
-              </Menu.Button>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Bell className="h-5 w-5" />
+            <span className="sr-only">Notifications</span>
+          </Button>
 
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
-              >
-                <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <Menu.Item>
-                    {({ active }) => (
-                      <a
-                        href="/profile"
-                        className={`${
-                          active ? "bg-gray-100" : ""
-                        } block px-4 py-2 text-sm text-gray-700`}
-                      >
-                        Your Profile
-                      </a>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {({ active }) => (
-                      <a
-                        href="/settings"
-                        className={`${
-                          active ? "bg-gray-100" : ""
-                        } block px-4 py-2 text-sm text-gray-700`}
-                      >
-                        Settings
-                      </a>
-                    )}
-                  </Menu.Item>
-                </Menu.Items>
-              </Transition>
-            </Menu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-9 rounded-full flex items-center gap-2 pl-2 pr-4 hover:bg-accent group">
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20">
+                  <CircleUser className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium text-foreground">{user?.name || "Admin"}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user?.name || "Super Admin"}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.email || "admin@testmaster.com"}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer">
+                <UserIcon className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
   );
 }
+
+import { LogOut } from "lucide-react";

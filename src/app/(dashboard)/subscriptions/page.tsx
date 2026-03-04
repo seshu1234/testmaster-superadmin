@@ -2,16 +2,47 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CurrencyDollarIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
-import { api } from "@/lib/api";
+import { 
+  CreditCard, 
+  Search, 
+  CheckCircle2, 
+  XCircle, 
+  Clock,
+  TrendingUp,
+  Users,
+  AlertCircle,
+  MoreVertical,
+  Calendar,
+  Loader2,
+  DollarSign
+} from "lucide-react";
+import apiClient from "@/lib/api/client";
 import Link from "next/link";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Subscription {
   id: string;
@@ -34,224 +65,215 @@ export default function SubscriptionsPage() {
   const [status, setStatus] = useState("all");
   const [plan, setPlan] = useState("all");
 
-  const { data: subscriptions, isLoading } = useQuery({
+  const { data: response, isLoading } = useQuery({
     queryKey: ["subscriptions", search, status, plan],
-    queryFn: () =>
-      api
-        .get("/admin/subscriptions", { params: { search, status, plan_id: plan } })
-        .then((res) => res.data),
+    queryFn: () => {
+      const params: any = { search };
+      if (status !== 'all') params.status = status;
+      if (plan !== 'all') params.plan_id = plan;
+      
+      return apiClient
+        .get("/super-admin/subscriptions", { params })
+        .then((res) => res.data);
+    },
   });
 
-  const { data: plans } = useQuery({
+  const subscriptions = response?.data || [];
+
+  const { data: plansResponse } = useQuery({
     queryKey: ["plans-list"],
-    queryFn: () => api.get("/admin/subscriptions/plans").then((res) => res.data),
+    queryFn: () => apiClient.get("/super-admin/subscriptions/plans").then((res) => res.data),
   });
 
-  const { data: stats } = useQuery({
+  const plans = plansResponse?.data || [];
+
+  const { data: statsResponse } = useQuery({
     queryKey: ["subscription-stats"],
-    queryFn: () => api.get("/admin/subscriptions/stats").then((res) => res.data),
+    queryFn: () => apiClient.get("/super-admin/subscriptions/stats").then((res) => res.data),
   });
 
-  const getStatusColor = (status: Subscription['status']) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'past_due':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'canceled':
-        return 'bg-red-100 text-red-800';
-      case 'trialing':
-        return 'bg-blue-100 text-blue-800';
-      case 'incomplete':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const stats = statsResponse?.data || {};
 
-  const getStatusIcon = (status: Subscription['status']) => {
+  const getStatusBadge = (status: Subscription['status']) => {
     switch (status) {
       case 'active':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
+        return <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-none gap-1.5"><CheckCircle2 className="h-3 w-3" /> Active</Badge>;
       case 'past_due':
-        return <ClockIcon className="h-5 w-5 text-yellow-500" />;
+        return <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none gap-1.5"><Clock className="h-3 w-3" /> Past Due</Badge>;
       case 'canceled':
-        return <XCircleIcon className="h-5 w-5 text-red-500" />;
+        return <Badge variant="destructive" className="bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border-none gap-1.5"><XCircle className="h-3 w-3" /> Canceled</Badge>;
+      case 'trialing':
+        return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-none gap-1.5">Trialing</Badge>;
       default:
-        return null;
+        return <Badge variant="secondary" className="bg-slate-500/10 text-slate-600 hover:bg-slate-500/20 border-none capitalize">{status}</Badge>;
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Subscriptions</h1>
-        <Link
-          href="/subscriptions/plans"
-          className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-        >
-          <CurrencyDollarIcon className="mr-2 h-5 w-5" />
-          Manage Plans
-        </Link>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Subscriptions</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage ongoing commitments and recurring revenue streams.</p>
+        </div>
+        <Button asChild className="rounded-xl shadow-md shadow-primary/20">
+          <Link href="/subscriptions/plans">
+            <DollarSign className="mr-2 h-4 w-4" />
+            Manage Plans
+          </Link>
+        </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Monthly Recurring Revenue</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {formatCurrency(stats?.mrr || 0)}
-          </dd>
-          <dd className="mt-2 text-sm text-green-600">↑ {stats?.mrr_growth || 0}% from last month</dd>
-        </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Active Subscriptions</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {stats?.active_subscriptions || 0}
-          </dd>
-        </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Churn Rate</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {stats?.churn_rate || 0}%
-          </dd>
-        </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Past Due</dt>
-          <dd className="mt-1 text-3xl font-semibold text-yellow-600">
-            {stats?.past_due || 0}
-          </dd>
-        </div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "MRR", value: formatCurrency(stats?.mrr || 0), sub: `${stats?.mrr_growth || 0}% vs last mo`, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-500/10" },
+          { label: "Active Subs", value: stats?.active_subscriptions || 0, sub: "Paying customers", icon: CreditCard, color: "text-blue-600", bg: "bg-blue-500/10" },
+          { label: "Churn Rate", value: `${stats?.churn_rate || 0}%`, sub: "Monthly average", icon: Users, color: "text-indigo-600", bg: "bg-indigo-500/10" },
+          { label: "Past Due", value: stats?.past_due || 0, sub: "Requires attention", icon: AlertCircle, color: "text-rose-600", bg: "bg-rose-500/10" },
+        ].map((card, i) => (
+          <div key={i} className="rounded-2xl bg-card p-6 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{card.label}</p>
+                <p className="text-2xl font-bold text-foreground">{card.value}</p>
+                <p className={`text-[11px] font-bold ${card.color}`}>{card.sub}</p>
+              </div>
+              <div className={`rounded-xl p-3 ${card.bg} ${card.color}`}>
+                <card.icon className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="relative">
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             placeholder="Search by tenant..."
-            className="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2 focus:border-indigo-500 focus:outline-none"
+            className="pl-9 h-11 bg-card border-none shadow-sm rounded-xl focus-visible:ring-primary"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <select
-          className="rounded-md border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="past_due">Past Due</option>
-          <option value="trialing">Trialing</option>
-          <option value="canceled">Canceled</option>
-          <option value="incomplete">Incomplete</option>
-        </select>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-[160px] h-11 bg-card border-none shadow-sm rounded-xl">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="past_due">Past Due</SelectItem>
+            <SelectItem value="trialing">Trialing</SelectItem>
+            <SelectItem value="canceled">Canceled</SelectItem>
+            <SelectItem value="incomplete">Incomplete</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <select
-          className="rounded-md border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none"
-          value={plan}
-          onChange={(e) => setPlan(e.target.value)}
-        >
-          <option value="all">All Plans</option>
-          {plans?.map((p: any) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+        <Select value={plan} onValueChange={setPlan}>
+          <SelectTrigger className="w-[180px] h-11 bg-card border-none shadow-sm rounded-xl">
+            <SelectValue placeholder="All Plans" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Plans</SelectItem>
+            {plans.map((p: any) => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Subscriptions Table */}
+      {/* Table */}
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        <div className="flex h-64 items-center justify-center rounded-3xl bg-card shadow-sm">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground animate-pulse">Processing financial records...</p>
+          </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg bg-white shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Tenant
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Plan
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Period
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {subscriptions?.map((sub: Subscription) => (
-                <tr key={sub.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {sub.tenant_name}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-900">{sub.plan_name}</div>
-                    <div className="text-xs text-gray-500 capitalize">{sub.interval}ly</div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="flex items-center">
-                      {getStatusIcon(sub.status)}
-                      <span className={`ml-2 inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(sub.status)}`}>
-                        {sub.status.replace('_', ' ')}
+        <div className="rounded-3xl bg-card shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="px-6 h-14 font-bold text-foreground/70">Tenant</TableHead>
+                <TableHead className="px-6 h-14 font-bold text-foreground/70">Plan / Billing</TableHead>
+                <TableHead className="px-6 h-14 font-bold text-foreground/70">Status</TableHead>
+                <TableHead className="px-6 h-14 font-bold text-foreground/70">Amount</TableHead>
+                <TableHead className="px-6 h-14 font-bold text-foreground/70">Period</TableHead>
+                <TableHead className="px-6 h-14 text-right"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {subscriptions.length > 0 ? subscriptions.map((sub: Subscription) => (
+                <TableRow key={sub.id} className="group hover:bg-muted/50 border-none transition-colors">
+                  <TableCell className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold">
+                        {sub.tenant_name.charAt(0)}
+                      </div>
+                      <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                        {sub.tenant_name}
                       </span>
-                      {sub.cancel_at_period_end && (
-                        <span className="ml-2 text-xs text-gray-500">(cancels at period end)</span>
-                      )}
                     </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {formatCurrency(sub.amount)}/{sub.interval === 'month' ? 'mo' : 'yr'}
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-bold text-foreground">{sub.plan_name}</span>
+                      <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{sub.interval === 'month' ? 'Monthly' : 'Yearly'} Billing</span>
                     </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-xs text-gray-500">
-                      {formatDate(sub.current_period_start)} - {formatDate(sub.current_period_end)}
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    {getStatusBadge(sub.status)}
+                    {sub.cancel_at_period_end && (
+                      <p className="mt-1 text-[9px] text-muted-foreground italic tracking-tight">Pending cancellation</p>
+                    )}
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className="text-sm font-bold text-foreground">
+                      {formatCurrency(sub.amount)}
+                      <span className="text-muted-foreground font-normal text-xs ml-0.5">/{sub.interval === 'month' ? 'mo' : 'yr'}</span>
                     </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-500">
-                      {formatDate(sub.created_at)}
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDate(sub.current_period_end)}
                     </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                    <Link
-                      href={`/subscriptions/${sub.id}`}
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
-                    >
-                      View
-                    </Link>
-                    <Link
-                      href={`/subscriptions/${sub.id}/edit`}
-                      className="text-gray-600 hover:text-gray-900"
-                    >
-                      Manage
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/subscriptions/${sub.id}`}>View Details</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/subscriptions/${sub.id}/edit`}>Manage Subscription</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/subscriptions/invoices?tenant_id=${sub.tenant_id}`}>View Invoices</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic">
+                    No active subscriptions match your filters.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
