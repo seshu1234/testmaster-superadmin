@@ -67,7 +67,7 @@ export default function UsersPage() {
       if (tenant !== 'all') params.tenant = tenant;
       
       return apiClient
-        .get("/super-admin/users", { params })
+        .get("super-admin/users", { params })
         .then((res) => res.data);
     },
   });
@@ -76,7 +76,7 @@ export default function UsersPage() {
 
   const { data: tenantsResponse } = useQuery({
     queryKey: ["tenants-list"],
-    queryFn: () => apiClient.get("/super-admin/tenants?limit=100").then((res) => res.data),
+    queryFn: () => apiClient.get("super-admin/tenants?limit=100").then((res) => res.data),
   });
 
   const tenants = tenantsResponse?.data || [];

@@ -73,7 +73,7 @@ export default function TenantDetailsPage() {
 
   const { data: response, isLoading, error } = useQuery({
     queryKey: ["tenant", id],
-    queryFn: () => apiClient.get(`/super-admin/tenants/${id}`).then((res) => res.data),
+    queryFn: () => apiClient.get(`super-admin/tenants/${id}`).then((res) => res.data),
   });
 
   const tenant = response?.data as TenantDetails;

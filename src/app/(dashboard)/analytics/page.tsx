@@ -42,6 +42,16 @@ export default function AnalyticsPage() {
     );
   }
 
+  if (!data) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <div className="text-center p-8 bg-red-50 rounded-xl border border-red-100">
+          <p className="text-red-600 font-medium">Analytics data could not be retrieved.</p>
+        </div>
+      </div>
+    );
+  }
+
   const { overview, plan_distribution, signup_trend, platform_activity, recent_tenants } = data;
 
   const metrics = [

@@ -45,12 +45,12 @@ export default function DashboardPage() {
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <div className="rounded-xl border border-red-100 bg-red-50 p-8 text-center">
         <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
         <h3 className="mt-4 text-lg font-semibold text-red-900">Failed to load analytics</h3>
-        <p className="mt-2 text-sm text-red-700">Please check your connection or permissions and try again.</p>
+        <p className="mt-2 text-sm text-red-700">{error ? "Please check your connection or permissions." : "Analytics data is unavailable."}</p>
       </div>
     );
   }

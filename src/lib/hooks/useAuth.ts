@@ -13,7 +13,10 @@ const setCookie = (name: string, value: string, days = 7) => {
 // Helper to get cookie
 const getCookie = (name: string) => {
   if (typeof document === 'undefined') return undefined;
-  return document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1];
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift();
+  return undefined;
 };
 
 // Helper to delete cookie

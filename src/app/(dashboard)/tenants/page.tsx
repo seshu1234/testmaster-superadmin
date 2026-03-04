@@ -62,7 +62,7 @@ export default function TenantsPage() {
       if (status !== 'all') params.status = status;
       
       return apiClient
-        .get("/super-admin/tenants", { params })
+        .get("super-admin/tenants", { params })
         .then((res) => res.data);
     },
   });
@@ -70,21 +70,21 @@ export default function TenantsPage() {
   const tenants = response?.data || [];
 
   const suspendMutation = useMutation({
-    mutationFn: (id: string) => apiClient.post(`/super-admin/tenants/${id}/suspend`),
+    mutationFn: (id: string) => apiClient.post(`super-admin/tenants/${id}/suspend`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
     },
   });
 
   const reactivateMutation = useMutation({
-    mutationFn: (id: string) => apiClient.post(`/super-admin/tenants/${id}/reactivate`),
+    mutationFn: (id: string) => apiClient.post(`super-admin/tenants/${id}/reactivate`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
     },
   });
 
   const impersonateMutation = useMutation({
-    mutationFn: (id: string) => apiClient.post(`/super-admin/tenants/${id}/impersonate`),
+    mutationFn: (id: string) => apiClient.post(`super-admin/tenants/${id}/impersonate`),
     onSuccess: (res: any) => {
       const { token, tenant } = res.data.data;
       const tenantDomain = `http://${tenant.slug}.localhost:3000/login/callback?token=${token}`;

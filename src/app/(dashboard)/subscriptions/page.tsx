@@ -73,7 +73,7 @@ export default function SubscriptionsPage() {
       if (plan !== 'all') params.plan_id = plan;
       
       return apiClient
-        .get("/super-admin/subscriptions", { params })
+        .get("super-admin/subscriptions", { params })
         .then((res) => res.data);
     },
   });
@@ -82,14 +82,14 @@ export default function SubscriptionsPage() {
 
   const { data: plansResponse } = useQuery({
     queryKey: ["plans-list"],
-    queryFn: () => apiClient.get("/super-admin/subscriptions/plans").then((res) => res.data),
+    queryFn: () => apiClient.get("super-admin/subscriptions/plans").then((res) => res.data),
   });
 
   const plans = plansResponse?.data || [];
 
   const { data: statsResponse } = useQuery({
     queryKey: ["subscription-stats"],
-    queryFn: () => apiClient.get("/super-admin/subscriptions/stats").then((res) => res.data),
+    queryFn: () => apiClient.get("super-admin/subscriptions/stats").then((res) => res.data),
   });
 
   const stats = statsResponse?.data || {};
