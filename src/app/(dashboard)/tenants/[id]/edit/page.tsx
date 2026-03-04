@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
-  Building2, 
-  ChevronLeft, 
+  ArrowLeft,
   Loader2, 
-  CheckCircle2,
   AlertCircle,
-  Save
+  Save,
 } from "lucide-react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -35,13 +33,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const formSchema = z.z.object({
+const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
+  slug: z.string().min(2, "Slug must be at least 2 characters."),
+  phone: z.string().optional().nullable(),
   plan_id: z.string().min(1, "Please select a plan."),
   status: z.string(),
+  trial_ends_at: z.string().optional().nullable(),
 });
 
 export default function EditTenantPage() {
@@ -56,8 +56,11 @@ export default function EditTenantPage() {
     defaultValues: {
       name: "",
       email: "",
+      slug: "",
+      phone: "",
       plan_id: "",
       status: "trial",
+      trial_ends_at: "",
     },
   });
 
@@ -77,8 +80,11 @@ export default function EditTenantPage() {
       form.reset({
         name: t.name,
         email: t.email,
+        slug: t.slug,
+        phone: t.phone || "",
         plan_id: t.plan_id || t.plan?.id || "",
         status: t.status,
+        trial_ends_at: t.trial_ends_at ? new Date(t.trial_ends_at).toISOString().split('T')[0] : "",
       });
     }
   }, [tenantResponse, form]);
@@ -87,7 +93,12 @@ export default function EditTenantPage() {
 
   const mutation = useMutation({
     mutationFn: (values: z.infer<typeof formSchema>) => {
-      return apiClient.put(`super-admin/tenants/${id}`, values);
+      const payload = {
+        ...values,
+        phone: values.phone === "" ? null : values.phone,
+        trial_ends_at: values.trial_ends_at === "" ? null : values.trial_ends_at,
+      };
+      return apiClient.put(`super-admin/tenants/${id}`, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant", id] });
@@ -106,50 +117,76 @@ export default function EditTenantPage() {
 
   if (isLoadingTenant) {
     return (
-      <div className="flex h-[70vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild className="rounded-xl">
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      {/* Header with back button */}
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
+          asChild
+        >
           <Link href={`/tenants/${id}`}>
-            <ChevronLeft className="h-5 w-5" />
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Back to institution
           </Link>
         </Button>
+        
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Institution</h1>
-          <p className="text-sm text-muted-foreground">Update details for {tenantResponse?.data?.name || 'this institution'}.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Edit institution</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Update institution details and settings
+          </p>
         </div>
       </div>
 
+      {/* Form */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-card">
-            <CardHeader className="bg-muted/30 pb-8 pt-10 px-10">
-              <div className="flex items-center gap-2 text-primary font-bold mb-1 uppercase tracking-widest text-xs">
-                <Building2 className="h-4 w-4" />
-                <span>Configuration</span>
-              </div>
-              <CardTitle className="text-2xl font-black">Tenant Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="p-10 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Basic Information */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-base font-medium">Basic information</h2>
+              <p className="text-sm text-muted-foreground">
+                Primary identification and contact details
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Institution name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., TestMaster Academy" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="slug"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-bold text-foreground/70">Institution Name</FormLabel>
+                      <FormLabel>Subdomain</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          className="h-12 bg-muted/50 border-none rounded-2xl focus-visible:ring-primary shadow-inner px-4 font-medium"
-                        />
+                        <Input {...field} placeholder="academy" />
                       </FormControl>
+                      <FormDescription>
+                        {field.value || "academy"}.testmaster.in
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -160,12 +197,9 @@ export default function EditTenantPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-bold text-foreground/70">Contact Email</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          className="h-12 bg-muted/50 border-none rounded-2xl focus-visible:ring-primary shadow-inner px-4 font-medium"
-                        />
+                        <Input {...field} type="email" placeholder="admin@academy.com" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -173,31 +207,59 @@ export default function EditTenantPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone (optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="+1 234 567 890" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          <Separator className="my-8" />
+
+          {/* Subscription & Status */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-base font-medium">Subscription & status</h2>
+              <p className="text-sm text-muted-foreground">
+                Manage service level and account state
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="plan_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-bold text-foreground/70">Subscription Plan</FormLabel>
+                      <FormLabel>Plan</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 bg-muted/50 border-none rounded-2xl focus:ring-primary shadow-inner px-4">
+                          <SelectTrigger>
                             <SelectValue placeholder="Select a plan" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-2xl outline-none border-border shadow-2xl p-2">
+                        {/* Fixed: Added position fixing props to SelectContent */}
+                        <SelectContent 
+                          position="popper" 
+                          className="z-50 max-h-[300px] overflow-y-auto"
+                          sideOffset={4}
+                        >
                           {isLoadingPlans ? (
-                            <div className="p-2 flex items-center justify-center">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            </div>
+                            <SelectItem value="loading" disabled>Loading plans...</SelectItem>
                           ) : (
                             plans.map((plan: any) => (
-                              <SelectItem key={plan.id} value={plan.id} className="cursor-pointer rounded-xl m-1 py-3">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="font-bold">{plan.name}</span>
-                                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest">${plan.price_monthly}/mo</span>
-                                </div>
+                              <SelectItem key={plan.id} value={plan.id}>
+                                {plan.name} (${plan.price_monthly}/mo)
                               </SelectItem>
                             ))
                           )}
@@ -213,17 +275,22 @@ export default function EditTenantPage() {
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-bold text-foreground/70">Operational Status</FormLabel>
+                      <FormLabel>Status</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 bg-muted/50 border-none rounded-2xl focus:ring-primary shadow-inner px-4 font-medium">
+                          <SelectTrigger>
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-2xl outline-none border-border shadow-2xl p-2">
-                          <SelectItem value="active" className="cursor-pointer rounded-xl m-1 py-3">Active</SelectItem>
-                          <SelectItem value="trial" className="cursor-pointer rounded-xl m-1 py-3">Free Trial</SelectItem>
-                          <SelectItem value="suspended" className="cursor-pointer rounded-xl m-1 py-3 text-destructive">Suspended</SelectItem>
+                        {/* Fixed: Added position fixing props to SelectContent */}
+                        <SelectContent 
+                          position="popper" 
+                          className="z-50"
+                          sideOffset={4}
+                        >
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="trial">Free trial</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -232,39 +299,76 @@ export default function EditTenantPage() {
                 />
               </div>
 
-              {error && (
-                <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-bold flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{error}</span>
-                </div>
-              )}
+              <FormField
+                control={form.control}
+                name="trial_ends_at"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trial end date</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        value={field.value || ""} 
+                        type="date" 
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Only applicable for trial accounts
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
-              <div className="flex justify-end gap-3 pt-8">
-                <Button variant="outline" type="button" asChild className="rounded-2xl h-14 px-8 font-bold hover:bg-muted transition-all border-2">
-                  <Link href={`/tenants/${id}`}>Discard Changes</Link>
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={mutation.isPending} 
-                  className="rounded-2xl h-14 px-10 font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  {mutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-5 w-5" />
-                      Update Intelligence
-                    </>
-                  )}
-                </Button>
+          {error && (
+            <div className="rounded-lg bg-destructive/10 p-4">
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                <span>{error}</span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          )}
+
+          {/* Form actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push(`/tenants/${id}`)}
+              className="min-w-[100px]"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={mutation.isPending}
+              className="min-w-[100px]"
+            >
+              {mutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
+                </>
+              )}
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
   );
 }
+
+// Simple separator component
+function Separator({ className }: { className?: string }) {
+  return <hr className={cn("border-t", className)} />;
+}
+
+import { cn } from "@/lib/utils";

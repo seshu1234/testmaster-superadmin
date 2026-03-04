@@ -3,29 +3,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { 
-  Building2, 
   Mail, 
-  Phone, 
   Calendar, 
-  CreditCard, 
   Users, 
   GraduationCap, 
   BookOpen, 
-  Activity,
-  ArrowLeft,
-  CheckCircle2,
   AlertCircle,
-  Clock,
-  ExternalLink,
+  Globe,
+  Settings,
+  ArrowLeft,
   ShieldCheck,
-  Globe
+  CheckCircle2
 } from "lucide-react";
 import apiClient from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { 
   Table, 
   TableBody, 
@@ -40,6 +35,15 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip
+} from 'recharts';
 
 interface TenantDetails {
   id: string;
@@ -51,6 +55,7 @@ interface TenantDetails {
   created_at: string;
   trial_ends_at: string | null;
   plan: {
+    id: string;
     name: string;
     student_limit: number;
     teacher_limit: number;
@@ -66,6 +71,14 @@ interface TenantDetails {
   };
 }
 
+const dummyChartData = [
+  { name: 'W1', students: 400, tests: 240 },
+  { name: 'W2', students: 600, tests: 380 },
+  { name: 'W3', students: 800, tests: 520 },
+  { name: 'W4', students: 1000, tests: 740 },
+  { name: 'W5', students: 1200, tests: 900 },
+];
+
 export default function TenantDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -80,54 +93,38 @@ export default function TenantDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Activity className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground animate-pulse font-medium">Loading institutional intelligence...</p>
-        </div>
+      <div className="flex h-[50vh] items-center justify-center">
+        <LoaderComponent />
       </div>
     );
   }
 
   if (error || !tenant) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center p-6 text-center">
-        <div className="max-w-md space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
-            <AlertCircle className="h-8 w-8 text-destructive" />
-          </div>
-          <h2 className="text-2xl font-bold">Tenant Not Found</h2>
-          <p className="text-muted-foreground">The institution you are looking for might have been removed or the ID is incorrect.</p>
-          <Button onClick={() => router.push("/tenants")} variant="outline" className="rounded-xl">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tenants
-          </Button>
-        </div>
-      </div>
-    );
+    return <ErrorComponent router={router} />;
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-none px-3 py-1">Active</Badge>;
+        return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">Active</Badge>;
       case 'suspended':
-        return <Badge variant="destructive" className="bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border-none px-3 py-1">Suspended</Badge>;
+        return <Badge variant="destructive">Suspended</Badge>;
       case 'trial':
-        return <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none px-3 py-1">Free Trial</Badge>;
+        return <Badge className="bg-amber-50 text-amber-700 border-amber-200">Free Trial</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
-      {/* Header */}
+    <div className="max-w-6xl mx-auto space-y-6 pb-12">
+      {/* Simple Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <Button 
             variant="ghost" 
             size="sm" 
-            className="pl-0 text-muted-foreground hover:text-primary transition-colors"
+            className="pl-0 text-muted-foreground hover:text-foreground"
             onClick={() => router.push("/tenants")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tenants
@@ -136,181 +133,177 @@ export default function TenantDetailsPage() {
             <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
             {getStatusBadge(tenant.status)}
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><Globe className="h-3.5 w-3.5" /> {tenant.slug}.testmaster.in</span>
-            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(tenant.created_at).toLocaleDateString()}</span>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1"><Globe className="h-4 w-4" /> {tenant.slug}.testmaster.in</span>
+            <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {tenant.email}</span>
+            <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Joined {new Date(tenant.created_at).toLocaleDateString()}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-xl px-5 border-2">Edit Details</Button>
-          <Button className="rounded-xl px-5 shadow-lg shadow-primary/20">
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => router.push(`/tenants/${id}/edit`)}
+          >
+            <Settings className="mr-2 h-4 w-4" /> Edit Details
+          </Button>
+          <Button size="sm">
             <ShieldCheck className="mr-2 h-4 w-4" /> Impersonate Admin
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Quick Stats & Info */}
-        <div className="lg:col-span-1 space-y-8">
-          <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-primary/5 pb-4">
-              <CardTitle className="text-sm font-medium uppercase tracking-wider text-primary/70">Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 font-medium">
-                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600"><Users className="h-4 w-4" /></div>
-                    <span>Total Students</span>
-                  </div>
-                  <span className="text-lg font-bold">{tenant.stats.total_students}</span>
-                </div>
-                <Progress value={(tenant.stats.total_students / (tenant.plan?.student_limit || 1000)) * 100} className="h-1.5" />
-                <p className="text-[10px] text-muted-foreground text-right italic">
-                  {tenant.stats.total_students} / {tenant.plan?.student_limit || "∞"} limit
-                </p>
-              </div>
+      <Separator />
 
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 font-medium">
-                    <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600"><GraduationCap className="h-4 w-4" /></div>
-                    <span>Total Teachers</span>
-                  </div>
-                  <span className="text-lg font-bold">{tenant.stats.total_teachers}</span>
+      {/* Basic Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          label="Students" 
+          value={tenant.stats.total_students} 
+          limit={tenant.plan?.student_limit} 
+          icon={Users}
+        />
+        <StatCard 
+          label="Teachers" 
+          value={tenant.stats.total_teachers} 
+          limit={tenant.plan?.teacher_limit} 
+          icon={GraduationCap}
+        />
+        <StatCard 
+          label="Total Tests" 
+          value={tenant.stats.total_tests} 
+          icon={BookOpen}
+        />
+        <StatCard 
+          label="Attempts" 
+          value={tenant.stats.total_attempts} 
+          icon={CheckCircle2}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Subscription Info Card */}
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Subscription & Plan</CardTitle>
+              <CardDescription>Current tier and billing status.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-xs text-muted-foreground font-medium uppercase">Current Plan</p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl font-bold">{tenant.plan?.name || "No Plan"}</span>
+                  {tenant.plan && (
+                    <span className="text-sm font-medium text-muted-foreground">(${tenant.plan.price_monthly}/mo)</span>
+                  )}
                 </div>
-                <Progress value={(tenant.stats.total_teachers / (tenant.plan?.teacher_limit || 100)) * 100} className="h-1.5" />
-                <p className="text-[10px] text-muted-foreground text-right italic">
-                   {tenant.stats.total_teachers} / {tenant.plan?.teacher_limit || "∞"} limit
-                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Next Billing</span>
+                  <span className="font-medium">April 12, 2026</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Contact Phone</span>
+                  <span className="font-medium">{tenant.phone || "Not provided"}</span>
+                </div>
               </div>
 
               <Separator />
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm break-all">{tenant.email}</span>
-                </div>
-                {tenant.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{tenant.phone}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Plan: <span className="font-bold text-primary">{tenant.plan?.name || "Free"}</span></span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-[2rem] border-none shadow-sm bg-gradient-to-br from-primary/10 via-background to-background">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Subscription Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col items-center justify-center p-6 bg-white/50 backdrop-blur rounded-2xl border border-white/20 shadow-inner">
-                <CreditCard className="h-10 w-10 text-primary mb-2 opacity-50" />
-                <p className="text-2xl font-black text-primary">${tenant.plan?.price_monthly || "0.00"}</p>
-                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Monthly Billing</p>
-              </div>
-              
-              <div className="flex items-center justify-between px-2 pt-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-bold text-emerald-600">Active</span>
-                </div>
-                <span className="text-[10px] font-mono text-muted-foreground">ID: sub_1N82hX9...</span>
+              <div className="space-y-2">
+                 <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium">
+                    <CheckCircle2 className="h-4 w-4" /> Secure Authentication
+                 </div>
+                 <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium">
+                    <CheckCircle2 className="h-4 w-4" /> API Access Enabled
+                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Right Column: Detailed Tabs */}
-        <div className="lg:col-span-2 space-y-8">
-          <Tabs defaultValue="stats" className="w-full">
-            <TabsList className="bg-muted/50 p-1.5 rounded-2xl mb-6 inline-flex w-auto border border-muted">
-              <TabsTrigger value="stats" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">Usage Intelligence</TabsTrigger>
-              <TabsTrigger value="subscriptions" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">Subscription History</TabsTrigger>
-              <TabsTrigger value="settings" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">System Logs</TabsTrigger>
+        {/* Tabs Content */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="insights" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="insights">Insights</TabsTrigger>
+              <TabsTrigger value="billing">Payments</TabsTrigger>
+              <TabsTrigger value="security">Logs</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="stats" className="space-y-6 animate-in fade-in duration-500">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Card className="rounded-[1.5rem] border-none shadow-sm">
-                  <CardContent className="pt-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Total Tests</p>
-                      <p className="text-2xl font-black">{tenant.stats.total_tests}</p>
-                    </div>
-                    <div className="h-12 w-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-600">
-                      <BookOpen className="h-6 w-6" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="rounded-[1.5rem] border-none shadow-sm">
-                  <CardContent className="pt-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Total Attempts</p>
-                      <p className="text-2xl font-black">{tenant.stats.total_attempts}</p>
-                    </div>
-                    <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
-                      <CheckCircle2 className="h-6 w-6" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card className="rounded-[2rem] border-none shadow-sm">
+            <TabsContent value="insights">
+              <Card>
                 <CardHeader>
-                  <CardTitle>Usage Trends</CardTitle>
-                  <CardDescription>Activity logs for students and teachers over the last 30 days.</CardDescription>
+                  <CardTitle className="text-lg">Usage Trends</CardTitle>
+                  <CardDescription>Operational metrics for recent weeks.</CardDescription>
                 </CardHeader>
-                <CardContent className="h-64 flex items-center justify-center border-t border-muted/20 bg-muted/5">
-                   <div className="flex flex-col items-center text-muted-foreground opacity-40">
-                      <Activity className="h-12 w-12 mb-2" />
-                      <p className="text-sm font-medium italic">Advanced analytics visualization coming in V2.1</p>
-                   </div>
+                <CardContent>
+                  <div className="h-64 w-full mt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={dummyChartData}>
+                        <defs>
+                          <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                        <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="students" 
+                          stroke="hsl(var(--primary))" 
+                          strokeWidth={2}
+                          fillOpacity={1} 
+                          fill="url(#colorStudents)" 
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="tests" 
+                          stroke="#94a3b8" 
+                          strokeWidth={1}
+                          strokeDasharray="4 4"
+                          fillOpacity={0} 
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="subscriptions" className="animate-in fade-in duration-500">
-              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden text-sm">
+            <TabsContent value="billing">
+              <Card className="overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/30 border-none">
-                      <TableHead className="font-bold">Period</TableHead>
-                      <TableHead className="font-bold">Plan</TableHead>
-                      <TableHead className="font-bold">Amount</TableHead>
-                      <TableHead className="font-bold">Status</TableHead>
-                      <TableHead className="text-right font-bold">Action</TableHead>
+                    <TableRow>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {tenant.subscriptions?.length > 0 ? tenant.subscriptions.map((sub: any) => (
-                      <TableRow key={sub.id} className="border-none hover:bg-muted/20 transition-colors">
+                      <TableRow key={sub.id}>
+                        <TableCell className="font-medium">#{sub.id?.substring(0, 8).toUpperCase()}</TableCell>
+                        <TableCell>{sub.plan?.name || "—"}</TableCell>
+                        <TableCell>{sub.plan?.price_monthly ? `$${sub.plan.price_monthly}` : "—"}</TableCell>
                         <TableCell>
-                           <div className="font-medium">{new Date(sub.current_period_starts_at).toLocaleDateString()}</div>
-                           <div className="text-[10px] text-muted-foreground font-mono uppercase">Started</div>
-                        </TableCell>
-                        <TableCell className="font-bold">{sub.plan?.name || "Standard"}</TableCell>
-                        <TableCell className="font-mono text-primary font-bold">${sub.plan?.price_monthly || "49.00"}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-tighter bg-emerald-50 text-emerald-600 border-none px-2">{sub.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" className="rounded-lg h-8 w-8 p-0 text-muted-foreground">
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
+                          <Badge variant="outline" className="capitalize">{sub.status}</Badge>
                         </TableCell>
                       </TableRow>
                     )) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">
-                           No subscription history found for this institution.
+                        <TableCell colSpan={4} className="h-32 text-center text-muted-foreground italic">
+                           No billing records found.
                         </TableCell>
                       </TableRow>
                     )}
@@ -319,30 +312,77 @@ export default function TenantDetailsPage() {
               </Card>
             </TabsContent>
             
-            <TabsContent value="settings" className="animate-in fade-in duration-500">
-               <Card className="rounded-[2rem] border-none shadow-sm p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                     <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">System Events</h3>
-                     <Badge variant="outline" className="rounded-full bg-blue-50 text-blue-600 border-none">LIVE</Badge>
-                  </div>
-                  <div className="space-y-4 pt-2">
-                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="flex gap-4 items-start pb-4 border-b border-muted/20 last:border-0 last:pb-0">
-                           <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
+            <TabsContent value="security">
+               <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Recent System Logs</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                     {[
+                       { event: 'Configuration Change', time: '12m ago', state: 'Success' },
+                       { event: 'Security Scan', time: '1h ago', state: 'Complete' },
+                       { event: 'API Key Usage', time: '4h ago', state: 'Verified' },
+                     ].map((log, i) => (
+                        <div key={i} className="flex justify-between items-center py-2 border-b last:border-0">
+                           <div className="space-y-0.5">
+                              <p className="text-sm font-medium">{log.event}</p>
+                              <p className="text-xs text-muted-foreground">{log.time}</p>
                            </div>
-                           <div className="flex-1 space-y-1">
-                              <p className="text-sm font-medium leading-none">Security Audit Performed</p>
-                              <p className="text-xs text-muted-foreground italic leading-none">Success / IP 192.168.1.{i * 10}</p>
-                           </div>
-                           <span className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">2h ago</span>
+                           <Badge variant="secondary" className="text-[10px] uppercase font-bold">{log.state}</Badge>
                         </div>
                      ))}
-                  </div>
+                  </CardContent>
                </Card>
             </TabsContent>
           </Tabs>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, limit, icon: Icon }: any) {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-bold">{value.toLocaleString()}</p>
+          {limit && <span className="text-xs text-muted-foreground">/ {limit.toLocaleString()}</span>}
+        </div>
+        {limit && (
+          <div className="space-y-1.5 mt-3">
+            <Progress value={(value / limit) * 100} className="h-1" />
+            <p className="text-[10px] text-right text-muted-foreground font-medium">{Math.round((value / limit) * 100)}% Used</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoaderComponent() {
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="h-8 w-8 border-b-2 border-primary rounded-full animate-spin" />
+      <p className="text-sm font-medium text-muted-foreground">Loading Institutional Data...</p>
+    </div>
+  );
+}
+
+function ErrorComponent({ router }: { router: any }) {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center p-8 text-center">
+      <div className="max-w-md space-y-4">
+        <AlertCircle className="mx-auto h-12 w-12 text-destructive opacity-30" />
+        <h2 className="text-xl font-bold">Tenant Not Found</h2>
+        <p className="text-muted-foreground">We couldn't find the institution you're looking for.</p>
+        <Button onClick={() => router.push("/tenants")} variant="outline">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tenants
+        </Button>
       </div>
     </div>
   );
