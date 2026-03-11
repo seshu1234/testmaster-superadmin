@@ -3,7 +3,7 @@
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import AppSidebar from "@/components/layouts/AppSidebar";
+import AppSidebar from "@/components/layouts/AppSidebar"; // Original import
 import Header from "@/components/layouts/Header";
 import { Loader2 } from "lucide-react";
 

@@ -114,7 +114,7 @@ export default function CreateUserPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-6">
-              <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-card">
+              <Card className="border-none shadow-none rounded-3xl overflow-hidden bg-card">
                 <CardHeader className="bg-muted/30 pb-6">
                   <div className="flex items-center gap-2 text-primary font-bold mb-1">
                     <Shield className="h-4 w-4" />
@@ -308,7 +308,7 @@ export default function CreateUserPage() {
             </div>
 
             <div className="space-y-6">
-              <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-card">
+              <Card className="border-none shadow-none rounded-3xl overflow-hidden bg-card">
                 <CardHeader className="bg-muted/30 pb-6">
                   <div className="flex items-center gap-2 text-primary font-bold mb-1">
                     <Key className="h-4 w-4" />

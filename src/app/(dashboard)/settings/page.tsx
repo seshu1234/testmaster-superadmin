@@ -1,16 +1,20 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  Cog6ToothIcon,
-  FlagIcon,
-  KeyIcon,
-  ShieldCheckIcon,
-  EnvelopeIcon,
-  ArchiveBoxIcon,
-  PaintBrushIcon,
-  GlobeAltIcon,
-} from "@heroicons/react/24/outline";
+import { 
+  Building2, 
+  ChevronRight, 
+  Cog, 
+  Flag,
+  Key,
+  ShieldCheck,
+  Mail,
+  Database,
+  Palette,
+  Globe,
+  Settings2
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import Link from "next/link";
 
@@ -26,102 +30,79 @@ const settingsGroups: SettingsGroup[] = [
   {
     title: "General",
     description: "Platform name, logo, branding, and regional settings",
-    icon: Cog6ToothIcon,
+    icon: Cog,
     href: "/settings/general",
     color: "bg-blue-500",
   },
   {
     title: "Feature Flags",
     description: "Enable/disable platform features and A/B testing",
-    icon: FlagIcon,
+    icon: Flag,
     href: "/settings/features",
     color: "bg-purple-500",
   },
   {
     title: "API Settings",
     description: "API keys, rate limiting, and webhook configuration",
-    icon: KeyIcon,
+    icon: Key,
     href: "/settings/api",
     color: "bg-green-500",
   },
   {
     title: "Security",
     description: "Authentication, MFA, password policies, and IP whitelisting",
-    icon: ShieldCheckIcon,
+    icon: ShieldCheck,
     href: "/settings/security",
     color: "bg-red-500",
   },
   {
     title: "Email",
     description: "SMTP settings, email templates, and notifications",
-    icon: EnvelopeIcon,
+    icon: Mail,
     href: "/settings/email",
-    color: "bg-yellow-500",
+    color: "bg-amber-500",
   },
   {
     title: "Backup",
     description: "Database backups, restore points, and retention policies",
-    icon: ArchiveBoxIcon,
+    icon: Database,
     href: "/settings/backup",
     color: "bg-indigo-500",
   },
   {
     title: "Branding",
     description: "Custom CSS, themes, and white-labeling options",
-    icon: PaintBrushIcon,
+    icon: Palette,
     href: "/settings/branding",
     color: "bg-pink-500",
   },
   {
     title: "Localization",
     description: "Languages, timezone, currency, and date formats",
-    icon: GlobeAltIcon,
+    icon: Globe,
     href: "/settings/localization",
-    color: "bg-teal-500",
+    color: "bg-emerald-500",
   },
 ];
 
 export default function SettingsPage() {
-  const { data: stats } = useQuery({
+  const { data: response } = useQuery({
     queryKey: ["settings-stats"],
-    queryFn: () => api.get("/admin/settings/stats").then((res) => res.data),
+    queryFn: () => api.get("super-admin/settings/stats").then((res) => res.data),
   });
+  const stats = response?.data;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Configure platform-wide settings and preferences
-        </p>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Active Features</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {stats?.active_features || 12}
-          </dd>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black tracking-tighter text-foreground">Control Center</h1>
+          <p className="text-sm text-muted-foreground font-medium">Configure core platform engine and global directives.</p>
         </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">API Keys</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {stats?.api_keys || 8}
-          </dd>
-        </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Email Templates</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {stats?.email_templates || 15}
-          </dd>
-        </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Last Backup</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {stats?.last_backup || '2h ago'}
-          </dd>
+        <div className="px-4 py-2 rounded-2xl bg-primary/5 border border-primary/10 flex items-center gap-3">
+           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+           <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Registry Health: Nominal</span>
         </div>
       </div>
 
@@ -131,76 +112,50 @@ export default function SettingsPage() {
           <Link
             key={group.title}
             href={group.href}
-            className="group relative rounded-lg bg-white p-6 shadow hover:shadow-md transition-shadow"
+            className="group relative rounded-[2rem] bg-card p-8 shadow-sm hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 overflow-hidden border border-transparent hover:border-primary/10"
           >
-            <div className={`absolute top-0 right-0 h-20 w-20 -translate-y-8 translate-x-8 transform rounded-full ${group.color} opacity-10`} />
-            <div className={`inline-flex rounded-lg ${group.color} p-3 text-white`}>
+            <div className={`absolute -top-4 -right-4 h-24 w-24 rounded-full ${group.color} opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500`} />
+            <div className={`inline-flex rounded-2xl ${group.color} p-4 text-white shadow-lg shadow-black/5`}>
               <group.icon className="h-6 w-6" />
             </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900 group-hover:text-indigo-600">
+            <h3 className="mt-8 text-xl font-black tracking-tight text-foreground transition-colors group-hover:text-primary leading-tight">
               {group.title}
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-2 text-xs font-semibold text-muted-foreground leading-relaxed italic opacity-70">
               {group.description}
             </p>
+            <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/30 group-hover:text-primary/60 transition-colors">
+               Enter Terminal <ChevronRight className="h-3 w-3" />
+            </div>
           </Link>
         ))}
       </div>
 
-      {/* Audit Log Summary */}
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-medium text-gray-900">Recent Configuration Changes</h2>
-        <div className="mt-4 flow-root">
-          <ul className="-mb-8">
-            <li className="relative pb-8">
-              <div className="relative flex space-x-3">
-                <div>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                    <Cog6ToothIcon className="h-4 w-4 text-blue-600" />
-                  </span>
+      {/* Audit Log / Recent Changes */}
+      <Card className="rounded-[3rem] border-none shadow-sm bg-muted/20 overflow-hidden">
+        <CardHeader className="p-8 pb-0">
+           <CardTitle className="text-xl font-bold">Registry Modifications</CardTitle>
+           <CardDescription>Recent authoritative changes to platform state.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-8">
+           <div className="space-y-4">
+              {[
+                { icon: Flag, text: "Feature flag 'AI Grading' enabled globally", time: "2h ago", color: "text-purple-500" },
+                { icon: Key, text: "New production API key issued for 'Global Edu'", time: "5h ago", color: "text-emerald-500" },
+              ].map((log, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-3xl bg-card border border-primary/5 hover:border-primary/10 transition-colors group">
+                   <div className="flex items-center gap-4">
+                      <div className={`p-2 rounded-xl bg-muted/50 ${log.color}`}>
+                         <log.icon className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-bold tracking-tight text-foreground/80 group-hover:text-foreground transition-colors">{log.text}</span>
+                   </div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">{log.time}</span>
                 </div>
-                <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      Feature flag <span className="font-medium text-gray-900">AI Grading</span> enabled for all tenants
-                    </p>
-                  </div>
-                  <div className="whitespace-nowrap text-right text-sm text-gray-500">
-                    <time dateTime="2024-01-15">2 hours ago</time>
-                  </div>
-                </div>
-              </div>
-            </li>
-            <li className="relative pb-8">
-              <div className="relative flex space-x-3">
-                <div>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-100">
-                    <KeyIcon className="h-4 w-4 text-yellow-600" />
-                  </span>
-                </div>
-                <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      New API key generated for <span className="font-medium text-gray-900">Acme Corp</span>
-                    </p>
-                  </div>
-                  <div className="whitespace-nowrap text-right text-sm text-gray-500">
-                    <time dateTime="2024-01-15">5 hours ago</time>
-                  </div>
-                </div>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <div className="mt-4">
-          <Link
-            href="/audit-logs"
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            View all audit logs →
-          </Link>
-        </div>
-      </div>
+              ))}
+           </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

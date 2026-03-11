@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
+import Link from "next/link";
 
 interface AuditLog {
   id: string;
@@ -38,11 +39,11 @@ export default function AuditLogsPage() {
   const [toDate, setToDate] = useState("");
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
-  const { data: logs, isLoading } = useQuery({
+  const { data: logsResponse, isLoading } = useQuery({
     queryKey: ["audit-logs", search, action, tenant, user, fromDate, toDate],
     queryFn: () =>
       api
-        .get("/admin/audit-logs", {
+        .get("super-admin/audit-logs", {
           params: {
             search,
             action: action !== 'all' ? action : undefined,
@@ -54,21 +55,25 @@ export default function AuditLogsPage() {
         })
         .then((res) => res.data),
   });
+  const logs = logsResponse?.data;
 
-  const { data: tenants } = useQuery({
+  const { data: tenantsResponse } = useQuery({
     queryKey: ["tenants-list"],
-    queryFn: () => api.get("/admin/tenants?limit=100").then((res) => res.data),
+    queryFn: () => api.get("super-admin/tenants?limit=100").then((res) => res.data),
   });
+  const tenants = tenantsResponse?.data;
 
-  const { data: users } = useQuery({
+  const { data: usersResponse } = useQuery({
     queryKey: ["users-list"],
-    queryFn: () => api.get("/admin/users?limit=100").then((res) => res.data),
+    queryFn: () => api.get("super-admin/users?limit=100").then((res) => res.data),
   });
+  const users = usersResponse?.data;
 
-  const { data: actions } = useQuery({
+  const { data: actionsResponse } = useQuery({
     queryKey: ["audit-actions"],
-    queryFn: () => api.get("/admin/audit-logs/actions").then((res) => res.data),
+    queryFn: () => api.get("super-admin/audit-logs/actions").then((res) => res.data),
   });
+  const actions = actionsResponse?.data;
 
   const getActionColor = (action: string) => {
     if (action.includes('create')) return 'bg-green-100 text-green-800';
@@ -87,7 +92,7 @@ export default function AuditLogsPage() {
       ...(fromDate && { from_date: fromDate }),
       ...(toDate && { to_date: toDate }),
     });
-    window.open(`/api/admin/audit-logs/export?${params}`, '_blank');
+    window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/super-admin/audit-logs/export?${params}`, '_blank');
   };
 
   return (

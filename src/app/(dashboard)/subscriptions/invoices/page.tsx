@@ -1,235 +1,177 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { 
+  FileText, 
+  Search, 
+  Download, 
+  ExternalLink,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Filter,
+  Loader2,
+  MoreVertical
+} from "lucide-react";
+import apiClient from "@/lib/api/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
-  DocumentTextIcon,
-  ArrowDownTrayIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
-import { api } from "@/lib/api";
-import { formatDate, formatCurrency } from "@/lib/utils";
-import Link from "next/link";
-
-interface Invoice {
-  id: string;
-  number: string;
-  tenant_id: string;
-  tenant_name: string;
-  subscription_id: string;
-  amount: number;
-  currency: string;
-  status: 'paid' | 'open' | 'void' | 'uncollectible';
-  paid_at: string | null;
-  due_date: string;
-  items: Array<{
-    description: string;
-    amount: number;
-    quantity: number;
-  }>;
-  pdf_url: string;
-  created_at: string;
-}
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import { format } from "date-fns";
 
 export default function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
 
-  const { data: invoices, isLoading } = useQuery({
-    queryKey: ["invoices", search, status, fromDate, toDate],
-    queryFn: () =>
-      api
-        .get("/admin/subscriptions/invoices", {
-          params: { search, status, from_date: fromDate, to_date: toDate },
-        })
-        .then((res) => res.data),
+  const { data: response, isLoading } = useQuery({
+    queryKey: ["invoices", search, status],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (status !== "all") params.append("status", status);
+      return apiClient.get(`super-admin/subscriptions/invoices?${params.toString()}`).then((res) => res.data);
+    },
   });
 
-  const { data: stats } = useQuery({
-    queryKey: ["invoice-stats"],
-    queryFn: () => api.get("/admin/subscriptions/invoices/stats").then((res) => res.data),
-  });
+  const invoices = response?.data || [];
 
-  const getStatusColor = (status: Invoice['status']) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'open':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'void':
-        return 'bg-gray-100 text-gray-800';
-      case 'uncollectible':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'paid': return <Badge className="bg-emerald-500/10 text-emerald-600 border-none px-3 font-bold">Paid</Badge>;
+      case 'pending': return <Badge className="bg-amber-500/10 text-amber-600 border-none px-3 font-bold">Pending</Badge>;
+      case 'failed': return <Badge variant="destructive" className="bg-rose-500/10 text-rose-600 border-none px-3 font-bold">Failed</Badge>;
+      case 'void': return <Badge variant="secondary" className="px-3 font-bold">Void</Badge>;
+      default: return <Badge variant="outline" className="px-3 font-bold">{status}</Badge>;
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Invoices</h1>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Billing Records</h1>
+          <p className="text-sm text-muted-foreground font-medium">Historical invoice ledger and payment reconciliation.</p>
+        </div>
+        <Button className="rounded-xl shadow-lg shadow-primary/20 bg-primary hover:scale-[1.02] active:scale-[0.98] transition-all">
+          <Download className="mr-2 h-4 w-4" /> Export Ledger
+        </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Total Invoiced</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {formatCurrency(stats?.total_invoiced || 0)}
-          </dd>
+      <Card className="rounded-[2rem] border-none shadow-sm bg-muted/20 p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search by Invoice ID, Tenant name or slug..." 
+              className="h-12 bg-background border-none rounded-2xl pl-12 shadow-inner focus-visible:ring-primary"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-12 w-12 rounded-2xl border-none bg-background shadow-inner p-0">
+               <Filter className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Paid</dt>
-          <dd className="mt-1 text-3xl font-semibold text-green-600">
-            {formatCurrency(stats?.total_paid || 0)}
-          </dd>
-        </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">Outstanding</dt>
-          <dd className="mt-1 text-3xl font-semibold text-yellow-600">
-            {formatCurrency(stats?.total_outstanding || 0)}
-          </dd>
-        </div>
-        <div className="rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">This Month</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">
-            {stats?.this_month || 0}
-          </dd>
-        </div>
-      </div>
+      </Card>
 
-      {/* Filters */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="relative">
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search invoices..."
-            className="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2 focus:border-indigo-500 focus:outline-none"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <select
-          className="rounded-md border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="all">All Status</option>
-          <option value="paid">Paid</option>
-          <option value="open">Open</option>
-          <option value="void">Void</option>
-          <option value="uncollectible">Uncollectible</option>
-        </select>
-
-        <input
-          type="date"
-          className="rounded-md border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none"
-          value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
-          placeholder="From Date"
-        />
-
-        <input
-          type="date"
-          className="rounded-md border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none"
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
-          placeholder="To Date"
-        />
-      </div>
-
-      {/* Invoices Table */}
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-lg bg-white shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Invoice #
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Tenant
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Due Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Paid Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {invoices?.map((invoice: Invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="flex items-center">
-                      <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm font-medium text-gray-900">
-                        {invoice.number}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-900">{invoice.tenant_name}</div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {formatCurrency(invoice.amount)}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(invoice.status)}`}>
-                      {invoice.status}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-500">
-                      {formatDate(invoice.due_date)}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-500">
-                      {invoice.paid_at ? formatDate(invoice.paid_at) : '-'}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {invoice.pdf_url && (
-                      <a
-                        href={invoice.pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-indigo-600 hover:text-indigo-900"
-                      >
-                        <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
-                        PDF
-                      </a>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden bg-card">
+         <Table>
+            <TableHeader className="bg-muted/30">
+               <TableRow className="hover:bg-transparent border-none">
+                  <TableHead className="py-6 pl-8 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Invoice ID</TableHead>
+                  <TableHead className="py-6 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Institution</TableHead>
+                  <TableHead className="py-6 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Plan</TableHead>
+                  <TableHead className="py-6 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Amount</TableHead>
+                  <TableHead className="py-6 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Date</TableHead>
+                  <TableHead className="py-6 font-black uppercase tracking-widest text-[10px] text-muted-foreground/60">Status</TableHead>
+                  <TableHead className="py-6 pr-8"></TableHead>
+               </TableRow>
+            </TableHeader>
+            <TableBody>
+               {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i} className="animate-pulse border-muted/20">
+                       <TableCell colSpan={7} className="py-8 px-8">
+                          <div className="h-4 w-full bg-muted/40 rounded-full" />
+                       </TableCell>
+                    </TableRow>
+                  ))
+               ) : invoices.length > 0 ? (
+                  invoices.map((invoice: any) => (
+                    <TableRow key={invoice.id} className="group hover:bg-muted/20 transition-colors border-muted/20">
+                       <TableCell className="py-6 pl-8">
+                          <span className="font-mono text-xs font-bold uppercase tracking-tighter text-muted-foreground">#{invoice.id.slice(0, 8)}</span>
+                       </TableCell>
+                       <TableCell className="py-6">
+                          <div className="flex flex-col">
+                             <span className="font-bold text-sm tracking-tight">{invoice.tenant?.name}</span>
+                             <span className="text-[10px] font-medium text-muted-foreground">{invoice.tenant?.slug}.testmaster.in</span>
+                          </div>
+                       </TableCell>
+                       <TableCell className="py-6">
+                          <Badge variant="outline" className="border-muted-foreground/10 text-muted-foreground/80 font-bold rounded-lg px-2">
+                             {invoice.plan_name || "Professional"}
+                          </Badge>
+                       </TableCell>
+                       <TableCell className="py-6">
+                          <span className="font-black text-sm tracking-tighter text-foreground">${invoice.amount.toLocaleString()}</span>
+                       </TableCell>
+                       <TableCell className="py-6 text-sm font-medium text-muted-foreground">
+                          {format(new Date(invoice.created_at), "MMM dd, yyyy")}
+                       </TableCell>
+                       <TableCell className="py-6">
+                          {getStatusBadge(invoice.status)}
+                       </TableCell>
+                       <TableCell className="py-6 pr-8 text-right">
+                          <DropdownMenu>
+                             <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl opacity-40 group-hover:opacity-100 transition-opacity">
+                                   <MoreVertical className="h-4 w-4" />
+                                </Button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl p-2 min-w-[160px]">
+                                <DropdownMenuItem className="rounded-xl flex items-center gap-3 font-bold text-primary focus:text-primary focus:bg-primary/5 cursor-pointer">
+                                   <FileText className="h-4 w-4" /> View PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="rounded-xl flex items-center gap-3 font-bold text-muted-foreground focus:text-foreground focus:bg-muted/50 cursor-pointer">
+                                   <ExternalLink className="h-4 w-4" /> Gateway Link
+                                </DropdownMenuItem>
+                             </DropdownMenuContent>
+                          </DropdownMenu>
+                       </TableCell>
+                    </TableRow>
+                  ))
+               ) : (
+                  <TableRow>
+                     <TableCell colSpan={7} className="h-40 py-8 px-8 text-center bg-muted/5">
+                        <div className="flex flex-col items-center justify-center space-y-3 opacity-30">
+                           <FileText className="h-10 w-10" />
+                           <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">No records found</p>
+                        </div>
+                     </TableCell>
+                  </TableRow>
+               )}
+            </TableBody>
+         </Table>
+      </Card>
     </div>
   );
 }

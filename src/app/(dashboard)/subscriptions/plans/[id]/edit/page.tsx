@@ -35,7 +35,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 
-const formSchema = z.z.object({
+const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   slug: z.string().min(2, "Slug must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
@@ -43,9 +43,13 @@ const formSchema = z.z.object({
   price_annual: z.coerce.number().min(0),
   student_limit: z.coerce.number().min(-1),
   test_limit: z.coerce.number().min(-1),
+  ai_credits: z.coerce.number().min(0).default(0),
   ai_grading: z.boolean().default(false),
+  ai_gen: z.boolean().default(false),
   api_access: z.boolean().default(false),
   custom_branding: z.boolean().default(false),
+  lms_integration: z.boolean().default(false),
+  bulk_upload: z.boolean().default(false),
   is_active: z.boolean().default(true),
 });
 
@@ -66,9 +70,13 @@ export default function EditPlanPage() {
       price_annual: 0,
       student_limit: 100,
       test_limit: 10,
+      ai_credits: 0,
       ai_grading: false,
+      ai_gen: false,
       api_access: false,
       custom_branding: false,
+      lms_integration: false,
+      bulk_upload: false,
       is_active: true,
     },
   });
@@ -89,9 +97,13 @@ export default function EditPlanPage() {
         price_annual: p.price_annual,
         student_limit: p.student_limit,
         test_limit: p.test_limit,
+        ai_credits: p.ai_credits || 0,
         ai_grading: p.ai_grading,
+        ai_gen: p.ai_gen || false,
         api_access: p.api_access,
         custom_branding: p.custom_branding,
+        lms_integration: p.lms_integration || false,
+        bulk_upload: p.bulk_upload || false,
         is_active: p.is_active,
       });
     }
@@ -326,6 +338,26 @@ export default function EditPlanPage() {
                     )}
                   />
 
+                  <FormField
+                    key="ai_credits"
+                    control={form.control}
+                    name="ai_credits"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Monthly AI Credits</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            {...field} 
+                            className="h-11 bg-muted/50 border-none rounded-xl focus-visible:ring-primary shadow-inner font-bold"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[10px]">Total AI operations permitted per month.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <Separator />
 
                   <FormField
@@ -357,11 +389,14 @@ export default function EditPlanPage() {
                   </div>
                   <CardTitle className="text-xl font-black">Modules</CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-5">
+                <CardContent className="p-6 space-y-3">
                    {[
                      { name: 'ai_grading', label: 'AI Smart Grading' },
+                     { name: 'ai_gen', label: 'AI Question Generation' },
                      { name: 'api_access', label: 'Strategic API Access' },
-                     { name: 'custom_branding', label: 'White-labeling' }
+                     { name: 'custom_branding', label: 'White-labeling' },
+                     { name: 'lms_integration', label: 'LMS Integration (LTI)' },
+                     { name: 'bulk_upload', label: 'Enterprise Bulk Uploads' }
                    ].map((item) => (
                     <FormField
                       key={item.name}

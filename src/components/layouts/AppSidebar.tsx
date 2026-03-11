@@ -3,16 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
+  Activity,
   BarChart3, 
   Bell, 
   Building2, 
   ClipboardList, 
   CreditCard, 
+  Cpu,
+  HeartHandshake,
   LayoutDashboard, 
   LogOut, 
   Settings, 
   ShieldCheck, 
   ShoppingBag, 
+  Target,
+  TrendingUp,
   Users 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,12 +27,15 @@ import { useAuth } from "@/lib/hooks/useAuth";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Tenants", href: "/tenants", icon: Building2 },
+  { name: "CRM Central", href: "/crm", icon: HeartHandshake },
   { name: "Users", href: "/users", icon: Users },
-  { name: "Marketplace", href: "/marketplace", icon: ShoppingBag },
   { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-  { name: "Monitoring", href: "/monitoring", icon: BarChart3 },
+  { name: "Analytics Hub", href: "/analytics", icon: BarChart3 },
+  { name: "Marketing Funnels", href: "/analytics/marketing", icon: Target },
+  { name: "Revenue", href: "/subscriptions/revenue", icon: TrendingUp },
+  { name: "AI Monitoring", href: "/analytics/ai", icon: Cpu },
+  { name: "Monitoring", href: "/monitoring", icon: Activity },
   { name: "Audit Logs", href: "/audit-logs", icon: ClipboardList },
-  { name: "Webhooks", href: "/webhooks", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -82,10 +90,41 @@ export default function AppSidebar() {
 
         <div>
           <div className="mb-4 px-4 text-[11px] font-bold uppercase tracking-widest text-foreground/40">
+            Intelligence
+          </div>
+          <nav className="space-y-1">
+            {navigation.slice(5, 8).map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                      : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-4 w-4 shrink-0 transition-colors",
+                      isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-accent-foreground"
+                    )}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div>
+          <div className="mb-4 px-4 text-[11px] font-bold uppercase tracking-widest text-foreground/40">
             System
           </div>
           <nav className="space-y-1">
-            {navigation.slice(5).map((item) => {
+            {navigation.slice(8).map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link

@@ -110,7 +110,7 @@ export default function LoginPage() {
               <Button 
                 type="submit" 
                 className={cn(
-                  "w-full h-12 text-base font-bold shadow-xl shadow-primary/20 transition-all active:scale-[0.98]",
+                  "w-full h-12 text-base font-bold shadow-xl shadow-primary/20 transition-all active:scale-[0.98] bg-black text-white",
                   isLoading ? "opacity-90" : "hover:scale-[1.01] hover:shadow-primary/30"
                 )} 
                 disabled={isLoading}
@@ -121,7 +121,7 @@ export default function LoginPage() {
                     <span>Authorizing...</span>
                   </div>
                 ) : (
-                  "Secure Sign In"
+                  "Sign In"
                 )}
               </Button>
             </CardFooter>
